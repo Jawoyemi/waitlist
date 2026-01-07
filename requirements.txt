@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+fastapi-mail
+python-dotenv
+aiosqlite
+psycopg2-binary
+email-validator
