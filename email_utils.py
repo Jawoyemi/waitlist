@@ -1,33 +1,49 @@
 import os
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class EmailService:
     def __init__(self):
-        self.configuration = sib_api_v3_sdk.Configuration()
-        self.configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
-        self.api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(self.configuration))
-        self.sender = {"name": "UniBuy Team", "email": os.getenv("MAIL_FROM")}
-        print(f"INFO: Initialized Brevo Email Service with sender: {self.sender['email']}")
+        self.api_key = os.getenv("SENDGRID_API_KEY")
+        self.from_email = os.getenv("MAIL_FROM")
+        self.url = "https://api.sendgrid.com/v3/mail/send"
+        print(f"INFO: Initialized SendGrid Email Service with sender: {self.from_email}")
+
+    def _send_email(self, to_email: str, subject: str, html_content: str):
+        if not self.api_key:
+            print("ERROR: SENDGRID_API_KEY is missing!")
+            return
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "personalizations": [{"to": [{"email": to_email}]}],
+            "from": {"email": self.from_email, "name": "UniBuy Team"},
+            "subject": subject,
+            "content": [{"type": "text/html", "value": html_content}]
+        }
+
+        try:
+            response = requests.post(self.url, headers=headers, json=data)
+            if response.status_code == 202:
+                print(f"SUCCESS: Email sent to {to_email}")
+            else:
+                print(f"ERROR: SendGrid returned {response.status_code}: {response.text}")
+        except Exception as e:
+            print(f"ERROR: Failed to connect to SendGrid: {str(e)}")
 
     async def send_notification_email(self, user_email: str, admin_email: str):
-        try:
-            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-                to=[{"email": admin_email}],
-                sender=self.sender,
-                subject="New Waitlist Signup!",
-                html_content=f"<p>A new user has joined the waitlist: <strong>{user_email}</strong></p>"
-            )
-            self.api_instance.send_transac_email(send_smtp_email)
-            print(f"SUCCESS: Admin notification sent for {user_email}")
-        except Exception as e:
-            print(f"ERROR: Brevo failed to send admin notification: {str(e)}")
+        subject = "New Waitlist Signup!"
+        html = f"<p>A new user has joined the waitlist: <strong>{user_email}</strong></p>"
+        self._send_email(admin_email, subject, html)
 
     async def send_welcome_email(self, user_email: str):
-        html_content = """
+        html_content = f"""
         <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -56,14 +72,4 @@ class EmailService:
             </body>
         </html>
         """
-        try:
-            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-                to=[{"email": user_email}],
-                sender=self.sender,
-                subject="You're on the list! Welcome to UniBuy",
-                html_content=html_content
-            )
-            self.api_instance.send_transac_email(send_smtp_email)
-            print(f"SUCCESS: Welcome email sent to {user_email}")
-        except Exception as e:
-            print(f"ERROR: Brevo failed to send welcome email to {user_email}: {str(e)}")
+        self._send_email(user_email, "You're on the list! Welcome to UniBuy", html_content)

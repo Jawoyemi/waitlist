@@ -8,4 +8,4 @@ python-dotenv
 aiosqlite
 psycopg2-binary
 email-validator
-sib-api-v3-sdk
+requests
