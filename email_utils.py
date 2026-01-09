@@ -1,27 +1,30 @@
 import os
-import resend
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class EmailService:
     def __init__(self):
-        resend.api_key = os.getenv("RESEND_API_KEY")
-        self.from_email = os.getenv("MAIL_FROM", "onboarding@resend.dev")
-        print(f"INFO: Initialized Resend Email Service with sender: {self.from_email}")
+        self.configuration = sib_api_v3_sdk.Configuration()
+        self.configuration.api_key['api-key'] = os.getenv("BREVO_API_KEY")
+        self.api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(self.configuration))
+        self.sender = {"name": "UniBuy Team", "email": os.getenv("MAIL_FROM")}
+        print(f"INFO: Initialized Brevo Email Service with sender: {self.sender['email']}")
 
     async def send_notification_email(self, user_email: str, admin_email: str):
         try:
-            params = {
-                "from": self.from_email,
-                "to": admin_email,
-                "subject": "New Waitlist Signup!",
-                "html": f"<p>A new user has joined the waitlist: <strong>{user_email}</strong></p>",
-            }
-            resend.Emails.send(params)
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": admin_email}],
+                sender=self.sender,
+                subject="New Waitlist Signup!",
+                html_content=f"<p>A new user has joined the waitlist: <strong>{user_email}</strong></p>"
+            )
+            self.api_instance.send_transac_email(send_smtp_email)
             print(f"SUCCESS: Admin notification sent for {user_email}")
         except Exception as e:
-            print(f"ERROR: Resend failed to send admin notification: {str(e)}")
+            print(f"ERROR: Brevo failed to send admin notification: {str(e)}")
 
     async def send_welcome_email(self, user_email: str):
         html_content = """
@@ -54,13 +57,13 @@ class EmailService:
         </html>
         """
         try:
-            params = {
-                "from": self.from_email,
-                "to": user_email,
-                "subject": "You're on the list! Welcome to UniBuy",
-                "html": html_content,
-            }
-            resend.Emails.send(params)
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                to=[{"email": user_email}],
+                sender=self.sender,
+                subject="You're on the list! Welcome to UniBuy",
+                html_content=html_content
+            )
+            self.api_instance.send_transac_email(send_smtp_email)
             print(f"SUCCESS: Welcome email sent to {user_email}")
         except Exception as e:
-            print(f"ERROR: Resend failed to send welcome email to {user_email}: {str(e)}")
+            print(f"ERROR: Brevo failed to send welcome email to {user_email}: {str(e)}")
