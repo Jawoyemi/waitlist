@@ -27,7 +27,8 @@ class EmailService:
             MAIL_STARTTLS=use_starttls,
             MAIL_SSL_TLS=use_ssl,
             USE_CREDENTIALS=True,
-            VALIDATE_CERTS=True
+            VALIDATE_CERTS=True,
+            TIMEOUT=60
         )
         self.fastmail = FastMail(self.conf)
 

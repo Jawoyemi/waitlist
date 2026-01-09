@@ -105,6 +105,20 @@ def export_users(admin_secret: str = Depends(get_admin_secret)):
     return [user.email for user in users]
 
 
+@app.get("/reset")
+def reset_database(admin_secret: str = Depends(get_admin_secret)):
+    db = database.SessionLocal()
+    try:
+        db.query(models.User).delete()
+        db.commit()
+        return {"message": "All users deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
 @app.get("/")
 def read_root():
     return {"message": "Waitlist API is running"}
