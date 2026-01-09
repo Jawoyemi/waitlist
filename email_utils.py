@@ -8,14 +8,24 @@ load_dotenv()
 
 class EmailService:
     def __init__(self):
+        port = int(os.getenv("MAIL_PORT", 587))
+        server = os.getenv("MAIL_SERVER")
+        username = os.getenv("MAIL_USERNAME")
+        
+        # Port 465 is for SSL/TLS, Port 587 is for STARTTLS
+        use_ssl = (port == 465)
+        use_starttls = (port == 587)
+        
+        print(f"INFO: Initializing EmailService - Server: {server}, Port: {port}, SSL: {use_ssl}, STARTTLS: {use_starttls}, User: {username}")
+        
         self.conf = ConnectionConfig(
-            MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+            MAIL_USERNAME=username,
             MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-            MAIL_FROM=os.getenv("MAIL_FROM"),
-            MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
-            MAIL_SERVER=os.getenv("MAIL_SERVER"),
-            MAIL_STARTTLS=True,
-            MAIL_SSL_TLS=False,
+            MAIL_FROM=os.getenv("MAIL_FROM", username),
+            MAIL_PORT=port,
+            MAIL_SERVER=server,
+            MAIL_STARTTLS=use_starttls,
+            MAIL_SSL_TLS=use_ssl,
             USE_CREDENTIALS=True,
             VALIDATE_CERTS=True
         )
