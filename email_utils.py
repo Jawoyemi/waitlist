@@ -1,49 +1,27 @@
 import os
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-from pydantic import EmailStr
-from typing import List
+import resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class EmailService:
     def __init__(self):
-        port = int(os.getenv("MAIL_PORT", 587))
-        server = os.getenv("MAIL_SERVER")
-        username = os.getenv("MAIL_USERNAME")
-        
-        # Port 465 is for SSL/TLS, Port 587 is for STARTTLS
-        use_ssl = (port == 465)
-        use_starttls = (port == 587)
-        
-        print(f"INFO: Initializing EmailService - Server: {server}, Port: {port}, SSL: {use_ssl}, STARTTLS: {use_starttls}, User: {username}")
-        
-        self.conf = ConnectionConfig(
-            MAIL_USERNAME=username,
-            MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-            MAIL_FROM=os.getenv("MAIL_FROM", username),
-            MAIL_PORT=port,
-            MAIL_SERVER=server,
-            MAIL_STARTTLS=use_starttls,
-            MAIL_SSL_TLS=use_ssl,
-            USE_CREDENTIALS=True,
-            VALIDATE_CERTS=True,
-            TIMEOUT=60
-        )
-        self.fastmail = FastMail(self.conf)
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        self.from_email = os.getenv("MAIL_FROM", "onboarding@resend.dev")
+        print(f"INFO: Initialized Resend Email Service with sender: {self.from_email}")
 
     async def send_notification_email(self, user_email: str, admin_email: str):
         try:
-            message = MessageSchema(
-                subject="New Waitlist Signup!",
-                recipients=[admin_email],
-                body=f"A new user has joined the waitlist: {user_email}",
-                subtype=MessageType.html
-            )
-            await self.fastmail.send_message(message)
+            params = {
+                "from": self.from_email,
+                "to": admin_email,
+                "subject": "New Waitlist Signup!",
+                "html": f"<p>A new user has joined the waitlist: <strong>{user_email}</strong></p>",
+            }
+            resend.Emails.send(params)
             print(f"SUCCESS: Admin notification sent for {user_email}")
         except Exception as e:
-            print(f"ERROR: Failed to send admin notification: {str(e)}")
+            print(f"ERROR: Resend failed to send admin notification: {str(e)}")
 
     async def send_welcome_email(self, user_email: str):
         html_content = """
@@ -75,15 +53,14 @@ class EmailService:
             </body>
         </html>
         """
-        
         try:
-            message = MessageSchema(
-                subject="You're on the list! Welcome to UniBuy",
-                recipients=[user_email],
-                body=html_content,
-                subtype=MessageType.html
-            )
-            await self.fastmail.send_message(message)
+            params = {
+                "from": self.from_email,
+                "to": user_email,
+                "subject": "You're on the list! Welcome to UniBuy",
+                "html": html_content,
+            }
+            resend.Emails.send(params)
             print(f"SUCCESS: Welcome email sent to {user_email}")
         except Exception as e:
-            print(f"ERROR: Failed to send welcome email to {user_email}: {str(e)}")
+            print(f"ERROR: Resend failed to send welcome email to {user_email}: {str(e)}")
