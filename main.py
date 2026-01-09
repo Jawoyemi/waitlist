@@ -27,12 +27,20 @@ app = FastAPI(lifespan=lifespan)
 # In production, set ALLOWED_ORIGINS=https://your-vercel-app.com,https://www.your-vercel-app.com
 origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
+# To allow requests with credentials from any origin (e.g. for dev), we cannot use "*"
+# We must match the origin via regex or explicit list.
+allow_origin_regex = None
+if "*" in origins:
+    allow_origin_regex = ".*"
+    origins = []
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origin_regex=allow_origin_regex,
 )
 
 email_service = EmailService()
