@@ -36,6 +36,10 @@ email_service = EmailService()
 
 # Admin email to receive notifications
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+if not ADMIN_EMAIL:
+    print("WARNING: ADMIN_EMAIL not found in environment variables.")
+else:
+    print(f"INFO: Admin notifications will be sent to {ADMIN_EMAIL}")
 
 @app.post("/join", response_model=schemas.UserResponse)
 async def join_waitlist(

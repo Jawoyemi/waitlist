@@ -22,13 +22,17 @@ class EmailService:
         self.fastmail = FastMail(self.conf)
 
     async def send_notification_email(self, user_email: str, admin_email: str):
-        message = MessageSchema(
-            subject="New Waitlist Signup!",
-            recipients=[admin_email],
-            body=f"A new user has joined the waitlist: {user_email}",
-            subtype=MessageType.html
-        )
-        await self.fastmail.send_message(message)
+        try:
+            message = MessageSchema(
+                subject="New Waitlist Signup!",
+                recipients=[admin_email],
+                body=f"A new user has joined the waitlist: {user_email}",
+                subtype=MessageType.html
+            )
+            await self.fastmail.send_message(message)
+            print(f"SUCCESS: Admin notification sent for {user_email}")
+        except Exception as e:
+            print(f"ERROR: Failed to send admin notification: {str(e)}")
 
     async def send_welcome_email(self, user_email: str):
         html_content = """
@@ -61,10 +65,14 @@ class EmailService:
         </html>
         """
         
-        message = MessageSchema(
-            subject="You're on the list! Welcome to UniBuy",
-            recipients=[user_email],
-            body=html_content,
-            subtype=MessageType.html
-        )
-        await self.fastmail.send_message(message)
+        try:
+            message = MessageSchema(
+                subject="You're on the list! Welcome to UniBuy",
+                recipients=[user_email],
+                body=html_content,
+                subtype=MessageType.html
+            )
+            await self.fastmail.send_message(message)
+            print(f"SUCCESS: Welcome email sent to {user_email}")
+        except Exception as e:
+            print(f"ERROR: Failed to send welcome email to {user_email}: {str(e)}")
